@@ -95,11 +95,9 @@ impl TerrainGrid {
         }
     }
 
-    pub fn draw_mesh(self: &Self, material: &Material) {
+    pub fn draw_mesh(self: &Self) {
         for mesh in &self.meshes {
-            gl_use_material(material);
             draw_mesh(&mesh);
-            gl_use_default_material();
         }
     }
 }

@@ -15,7 +15,7 @@ async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
     let brick_texture = load_texture("rock_brick.png").await.unwrap();
 
-    let terrain_grid = TerrainGrid::new(50, 50, brick_texture);
+    let terrain_grid = TerrainGrid::new(10, 10, brick_texture);
 
     let mut player = Player::new();
 
@@ -70,7 +70,10 @@ async fn main() {
             ..Default::default()
         });
 
-        terrain_grid.draw_mesh(&material);
+        gl_use_material(&material);
+
+        terrain_grid.draw_mesh();
+        gl_use_default_material();
 
         // Back to screen space, render some text
         set_default_camera();
