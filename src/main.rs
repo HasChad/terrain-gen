@@ -1,7 +1,6 @@
 use std::f32::consts::PI;
 
 use macroquad::prelude::*;
-// use rayon::prelude::*;
 
 mod app_settings;
 mod player;
@@ -16,7 +15,7 @@ async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
     let brick_texture = load_texture("rock_brick.png").await.unwrap();
 
-    let terrain_grid = TerrainGrid::new(50, 50);
+    let terrain_grid = TerrainGrid::new(50, 50, brick_texture);
 
     let mut player = Player::new();
 
@@ -71,70 +70,7 @@ async fn main() {
             ..Default::default()
         });
 
-        // grid.par_iter().enumerate().for_each(|(index, pos)| {
-        for (index, pos) in terrain_grid.grid.iter().enumerate() {
-            let x = (index % terrain_grid.x_count) as f32;
-            let z = (index / terrain_grid.x_count) as f32;
-
-            if x == 0.0 && z == 0.0 {
-                draw_sphere(Vec3::new(pos.x, pos.y, pos.z), 0.2, None, RED);
-            }
-
-            if x == (terrain_grid.x_count - 1) as f32 && z == (terrain_grid.z_count - 1) as f32 {
-                draw_sphere(Vec3::new(pos.x, pos.y, pos.z), 0.2, None, BLUE);
-            }
-
-            if z < (terrain_grid.z_count - 1) as f32 {
-                if x < (terrain_grid.x_count - 1) as f32 {
-                    // Define the two triangles of the quad
-                    let mesh_color = DARKBROWN;
-
-                    let normal3 = (terrain_grid.grid[index + 1] - *pos)
-                        .cross(terrain_grid.grid[index + terrain_grid.x_count] - *pos)
-                        .normalize();
-
-                    let normal = vec4(normal3.x, -normal3.y, normal3.z, 0.0);
-
-                    let vertices = vec![
-                        Vertex {
-                            position: *pos,
-                            uv: vec2(1., 0.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: terrain_grid.grid[index + 1],
-                            uv: vec2(0., 0.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: terrain_grid.grid[index + terrain_grid.x_count],
-                            uv: vec2(1., 1.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: terrain_grid.grid[index + 1 + terrain_grid.x_count],
-                            uv: vec2(0., 1.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                    ];
-
-                    let mesh = Mesh {
-                        vertices: vertices,
-                        // Indices for two triangles: (0, 1, 2) and (1, 3, 2)
-                        indices: vec![0, 2, 1, 1, 2, 3],
-                        texture: Some(brick_texture.clone()),
-                    };
-
-                    gl_use_material(&material);
-                    draw_mesh(&mesh);
-                    gl_use_default_material();
-                }
-            }
-        }
+        terrain_grid.draw_mesh(&material);
 
         // Back to screen space, render some text
         set_default_camera();
