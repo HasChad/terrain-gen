@@ -16,7 +16,7 @@ async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
     let brick_texture = load_texture("rock_brick.png").await.unwrap();
 
-    let terrain_grid = TerrainGrid::new(10, 10);
+    let terrain_grid = TerrainGrid::new(50, 50);
 
     let mut player = Player::new();
 
@@ -28,8 +28,8 @@ async fn main() {
 
     let material = load_material(
         ShaderSource::Glsl {
-            vertex: &load_string("vert.glsl").await.unwrap(),
-            fragment: &load_string("frag.glsl").await.unwrap(),
+            vertex: &load_string("src/vert.glsl").await.unwrap(),
+            fragment: &load_string("src/frag.glsl").await.unwrap(),
         },
         MaterialParams {
             pipeline_params,
@@ -84,29 +84,7 @@ async fn main() {
                 draw_sphere(Vec3::new(pos.x, pos.y, pos.z), 0.2, None, BLUE);
             }
 
-            if x < (terrain_grid.x_count - 1) as f32 {
-                draw_line_3d(
-                    vec3(pos.x, pos.y, pos.z),
-                    vec3(
-                        terrain_grid.grid[index + 1].x,
-                        terrain_grid.grid[index + 1].y,
-                        terrain_grid.grid[index + 1].z,
-                    ),
-                    YELLOW,
-                );
-            }
-
             if z < (terrain_grid.z_count - 1) as f32 {
-                draw_line_3d(
-                    vec3(pos.x, pos.y, pos.z),
-                    vec3(
-                        terrain_grid.grid[index + terrain_grid.x_count].x,
-                        terrain_grid.grid[index + terrain_grid.x_count].y,
-                        terrain_grid.grid[index + terrain_grid.x_count].z,
-                    ),
-                    YELLOW,
-                );
-
                 if x < (terrain_grid.x_count - 1) as f32 {
                     // Define the two triangles of the quad
                     let mesh_color = DARKBROWN;
@@ -115,7 +93,7 @@ async fn main() {
                         .cross(terrain_grid.grid[index + terrain_grid.x_count] - *pos)
                         .normalize();
 
-                    let normal = vec4(normal3.x, normal3.y, normal3.z, 0.0);
+                    let normal = vec4(normal3.x, -normal3.y, normal3.z, 0.0);
 
                     let vertices = vec![
                         Vertex {
@@ -147,7 +125,7 @@ async fn main() {
                     let mesh = Mesh {
                         vertices: vertices,
                         // Indices for two triangles: (0, 1, 2) and (1, 3, 2)
-                        indices: vec![0, 1, 2, 1, 3, 2],
+                        indices: vec![0, 2, 1, 1, 2, 3],
                         texture: Some(brick_texture.clone()),
                     };
 
