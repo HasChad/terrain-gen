@@ -1,37 +1,42 @@
 use std::f32::consts::PI;
 
 use macroquad::prelude::*;
-use noise::{NoiseFn, Perlin};
-use rayon::prelude::*;
+// use rayon::prelude::*;
 
 mod app_settings;
 mod player;
+mod terrain_grid;
 
 use app_settings::*;
 use player::*;
-
-const Z_COUNT: usize = 10;
-const X_COUNT: usize = 10;
+use terrain_grid::*;
 
 #[macroquad::main(conf)]
 async fn main() {
+    set_default_filter_mode(FilterMode::Nearest);
     let brick_texture = load_texture("rock_brick.png").await.unwrap();
-    brick_texture.set_filter(FilterMode::Nearest);
 
-    let mut grid: Vec<Vec3> = vec![Vec3::new(0.0, 0.0, 0.0); X_COUNT * Z_COUNT];
-
-    let perlin = Perlin::new(0);
-    let scale = 0.5;
-
-    for z in 0..Z_COUNT {
-        for x in 0..X_COUNT {
-            grid[z * X_COUNT + x].x = x as f32;
-            grid[z * X_COUNT + x].y += perlin.get([x as f64 * scale, 0.0, z as f64 * scale]) as f32;
-            grid[z * X_COUNT + x].z = z as f32;
-        }
-    }
+    let terrain_grid = TerrainGrid::new(10, 10);
 
     let mut player = Player::new();
+
+    let pipeline_params = PipelineParams {
+        depth_write: true,
+        depth_test: Comparison::LessOrEqual,
+        ..Default::default()
+    };
+
+    let material = load_material(
+        ShaderSource::Glsl {
+            vertex: &load_string("vert.glsl").await.unwrap(),
+            fragment: &load_string("frag.glsl").await.unwrap(),
+        },
+        MaterialParams {
+            pipeline_params,
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     let mut grabbed = false;
     set_cursor_grab(grabbed);
@@ -67,43 +72,47 @@ async fn main() {
         });
 
         // grid.par_iter().enumerate().for_each(|(index, pos)| {
-        for (index, pos) in grid.iter().enumerate() {
-            let x = (index % X_COUNT) as f32;
-            let z = (index / X_COUNT) as f32;
+        for (index, pos) in terrain_grid.grid.iter().enumerate() {
+            let x = (index % terrain_grid.x_count) as f32;
+            let z = (index / terrain_grid.x_count) as f32;
 
             if x == 0.0 && z == 0.0 {
                 draw_sphere(Vec3::new(pos.x, pos.y, pos.z), 0.2, None, RED);
             }
 
-            if x == (X_COUNT - 1) as f32 && z == (Z_COUNT - 1) as f32 {
+            if x == (terrain_grid.x_count - 1) as f32 && z == (terrain_grid.z_count - 1) as f32 {
                 draw_sphere(Vec3::new(pos.x, pos.y, pos.z), 0.2, None, BLUE);
             }
 
-            if x < (X_COUNT - 1) as f32 {
+            if x < (terrain_grid.x_count - 1) as f32 {
                 draw_line_3d(
                     vec3(pos.x, pos.y, pos.z),
-                    vec3(grid[index + 1].x, grid[index + 1].y, grid[index + 1].z),
+                    vec3(
+                        terrain_grid.grid[index + 1].x,
+                        terrain_grid.grid[index + 1].y,
+                        terrain_grid.grid[index + 1].z,
+                    ),
                     YELLOW,
                 );
             }
 
-            if z < (Z_COUNT - 1) as f32 {
+            if z < (terrain_grid.z_count - 1) as f32 {
                 draw_line_3d(
                     vec3(pos.x, pos.y, pos.z),
                     vec3(
-                        grid[index + X_COUNT].x,
-                        grid[index + X_COUNT].y,
-                        grid[index + X_COUNT].z,
+                        terrain_grid.grid[index + terrain_grid.x_count].x,
+                        terrain_grid.grid[index + terrain_grid.x_count].y,
+                        terrain_grid.grid[index + terrain_grid.x_count].z,
                     ),
                     YELLOW,
                 );
 
-                if x < (X_COUNT - 1) as f32 {
+                if x < (terrain_grid.x_count - 1) as f32 {
                     // Define the two triangles of the quad
                     let mesh_color = DARKBROWN;
 
-                    let normal3 = (grid[index + 1] - *pos)
-                        .cross(grid[index + X_COUNT] - *pos)
+                    let normal3 = (terrain_grid.grid[index + 1] - *pos)
+                        .cross(terrain_grid.grid[index + terrain_grid.x_count] - *pos)
                         .normalize();
 
                     let normal = vec4(normal3.x, normal3.y, normal3.z, 0.0);
@@ -116,19 +125,19 @@ async fn main() {
                             normal: normal,
                         },
                         Vertex {
-                            position: grid[index + 1],
+                            position: terrain_grid.grid[index + 1],
                             uv: vec2(0., 0.),
                             color: mesh_color.into(),
                             normal: normal,
                         },
                         Vertex {
-                            position: grid[index + X_COUNT],
+                            position: terrain_grid.grid[index + terrain_grid.x_count],
                             uv: vec2(1., 1.),
                             color: mesh_color.into(),
                             normal: normal,
                         },
                         Vertex {
-                            position: grid[index + 1 + X_COUNT],
+                            position: terrain_grid.grid[index + 1 + terrain_grid.x_count],
                             uv: vec2(0., 1.),
                             color: mesh_color.into(),
                             normal: normal,
@@ -142,7 +151,9 @@ async fn main() {
                         texture: Some(brick_texture.clone()),
                     };
 
+                    gl_use_material(&material);
                     draw_mesh(&mesh);
+                    gl_use_default_material();
                 }
             }
         }

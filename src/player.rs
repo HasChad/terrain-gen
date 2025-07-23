@@ -13,7 +13,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new() -> Player {
+    pub fn new() -> Self {
         let world_up = vec3(0.0, 1.0, 0.0);
         let yaw: f32 = 1.18;
         let pitch: f32 = 0.0;
@@ -23,6 +23,7 @@ impl Player {
             yaw.sin() * pitch.cos(),
         )
         .normalize();
+
         let right = front.cross(world_up).normalize();
         let up = right.cross(front).normalize();
 
@@ -59,11 +60,13 @@ impl Player {
     }
 
     pub fn move_player(self: &mut Self) {
+        let player_front = Vec3::new(self.front.x, 0.0, self.front.z).normalize();
+
         if is_key_down(KeyCode::W) {
-            self.position += self.front * MOVE_SPEED;
+            self.position += player_front * MOVE_SPEED;
         }
         if is_key_down(KeyCode::S) {
-            self.position -= self.front * MOVE_SPEED;
+            self.position -= player_front * MOVE_SPEED;
         }
         if is_key_down(KeyCode::A) {
             self.position -= self.right * MOVE_SPEED;
