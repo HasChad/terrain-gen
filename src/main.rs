@@ -15,7 +15,7 @@ async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
     let brick_texture = load_texture("rock_brick.png").await.unwrap();
 
-    let terrain_grid = TerrainGrid::new(200, 200, brick_texture);
+    let terrain_grid = TerrainGrid::new(100, 100, brick_texture);
 
     let mut player = Player::new();
 
@@ -59,7 +59,7 @@ async fn main() {
             player.move_head();
         }
 
-        clear_background(DARKGRAY);
+        clear_background(BLACK);
 
         // Going 3d!
         set_camera(&Camera3D {
