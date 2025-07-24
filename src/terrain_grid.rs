@@ -11,7 +11,7 @@ impl TerrainGrid {
     pub fn new(x_count: usize, z_count: usize, texture: Texture2D) -> Self {
         let mut grid: Vec<Vec3> = vec![Vec3::new(0.0, 0.0, 0.0); x_count * z_count];
 
-        let perlin = Perlin::new(10);
+        let perlin = Perlin::new(0);
         let scale = 0.2;
 
         for z in 0..z_count {
