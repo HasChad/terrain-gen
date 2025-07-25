@@ -13,9 +13,9 @@ use terrain_grid::*;
 #[macroquad::main(conf)]
 async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
-    let brick_texture = load_texture("rock_brick.png").await.unwrap();
+    let brick_texture = load_texture("assets/rock_brick.png").await.unwrap();
 
-    let terrain_grid = TerrainGrid::new(25, 25, brick_texture);
+    let terrain_grid = TerrainGrid::new(500, 500, brick_texture);
 
     let mut player = Player::new();
 
@@ -27,8 +27,8 @@ async fn main() {
 
     let material = load_material(
         ShaderSource::Glsl {
-            vertex: &load_string("src/vert.glsl").await.unwrap(),
-            fragment: &load_string("src/frag.glsl").await.unwrap(),
+            vertex: &load_string("shaders/vert.glsl").await.unwrap(),
+            fragment: &load_string("shaders/frag.glsl").await.unwrap(),
         },
         MaterialParams {
             pipeline_params,
@@ -51,12 +51,12 @@ async fn main() {
             show_mouse(!grabbed);
         }
 
-        if get_keys_down().len() > 0 {
-            player.move_player();
-        }
-
         if grabbed {
             player.move_head();
+
+            if get_keys_down().len() > 0 {
+                player.move_player();
+            }
         }
 
         clear_background(BLACK);

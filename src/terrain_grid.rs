@@ -1,9 +1,7 @@
 use macroquad::prelude::*;
-use noise::{Constant, NoiseFn};
+use noise::{NoiseFn, Perlin};
 
-const CHUNK_SIZE: usize = 25;
-const SCALE: f64 = 1.0;
-const HEIGHT: f32 = 1.0;
+const CHUNK_SIZE: usize = 28;
 
 pub struct TerrainGrid {
     // pub x_count: usize,
@@ -13,110 +11,121 @@ pub struct TerrainGrid {
 }
 
 impl TerrainGrid {
-    pub fn new(x_count: usize, z_count: usize, _brick_texture: Texture2D) -> Self {
-        let x_count = x_count + 1;
-        let z_count = z_count + 1;
+    pub fn new(x_mesh_count: usize, z_mesh_count: usize, brick_texture: Texture2D) -> Self {
+        let x_vert_count = x_mesh_count + 1;
+        let z_vert_count = z_mesh_count + 1;
 
-        let mut grid: Vec<Vec3> = vec![Vec3::ZERO; x_count * z_count];
+        let grid_scale: f32 = 1.0;
+        let mut scale: f64 = 0.02 / grid_scale as f64;
+        let mut height: f32 = 30.0 * grid_scale;
 
-        // let perlin = Perlin::new(0.0);
-        let perlin = Constant::new(0.0);
+        let mut grid: Vec<Vec3> = vec![Vec3::ZERO; x_vert_count * z_vert_count];
 
-        for z in 0..z_count {
-            for x in 0..x_count {
-                grid[z * x_count + x].x = x as f32;
-                grid[z * x_count + x].y +=
-                    perlin.get([x as f64 * SCALE, 0.0, z as f64 * SCALE]) as f32 * HEIGHT;
-                grid[z * x_count + x].z = z as f32;
+        let perlin = Perlin::new(1);
+
+        for z in 0..z_vert_count {
+            for x in 0..x_vert_count {
+                let x_test = x as f32 * grid_scale;
+                let z_test = z as f32 * grid_scale;
+
+                grid[z * x_vert_count + x].x = x_test as f32;
+                grid[z * x_vert_count + x].y +=
+                    perlin.get([x_test as f64 * scale, 0.0, z_test as f64 * scale]) as f32 * height;
+                grid[z * x_vert_count + x].z = z_test as f32;
             }
         }
 
-        /*
+        scale = 0.2;
+        height = 1.0;
+
         for cell in grid.iter_mut() {
             cell.y +=
-                perlin.get([cell.x as f64 * SCALE, 0.0, cell.z as f64 * SCALE]) as f32 * HEIGHT;
+                perlin.get([cell.x as f64 * scale, 0.0, cell.z as f64 * scale]) as f32 * height;
         }
-        */
 
-        let quad_count = (x_count - 1) * (z_count - 1);
-
-        let mut vertices: Vec<Vertex> = Vec::with_capacity(quad_count * 4);
-        let mut indices: Vec<u16> = Vec::with_capacity(quad_count * 6);
-        let mut index_offset = 0;
+        let mut meshes = Vec::new();
 
         let mesh_color = YELLOW;
 
-        for cz in (0..z_count - 1).step_by(CHUNK_SIZE) {
-            for cx in (0..x_count - 1).step_by(CHUNK_SIZE) {}
-        }
+        for cz in (0..z_mesh_count).step_by(CHUNK_SIZE) {
+            for cx in (0..x_mesh_count).step_by(CHUNK_SIZE) {
+                let chunk_x_count = CHUNK_SIZE.min(x_mesh_count - cx);
+                let chunk_z_count = CHUNK_SIZE.min(z_mesh_count - cz);
 
-        for (index, pos) in grid.iter().enumerate() {
-            let x = (index % x_count) as f32;
-            let z = (index / x_count) as f32;
+                let quad_count = chunk_x_count * chunk_z_count;
+                let mut vertices = Vec::with_capacity(quad_count * 4);
+                let mut indices = Vec::with_capacity(quad_count * 6);
+                let mut index_offset = 0;
 
-            if z < (z_count - 1) as f32 {
-                if x < (x_count - 1) as f32 {
-                    let v0 = *pos;
-                    let v1 = grid[index + 1];
-                    let v2 = grid[index + x_count];
-                    let v3 = grid[index + x_count + 1];
+                for z in 0..chunk_z_count {
+                    for x in 0..chunk_x_count {
+                        let gx = cx + x;
+                        let gz = cz + z;
+                        let i = gz * x_vert_count + gx;
 
-                    let normal3 = (v1 - v0).cross(v2 - v0).normalize();
+                        let v0 = grid[i];
+                        let v1 = grid[i + 1];
+                        let v2 = grid[i + x_vert_count];
+                        let v3 = grid[i + 1 + x_vert_count];
 
-                    let normal = vec4(normal3.x, -normal3.y, normal3.z, 0.0);
+                        let normal3 = (v1 - v0).cross(v2 - v0).normalize();
+                        let normal = vec4(normal3.x, -normal3.y, normal3.z, 0.0);
 
-                    vertices.extend_from_slice(&[
-                        Vertex {
-                            position: v0,
-                            uv: vec2(1., 0.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: v1,
-                            uv: vec2(0., 0.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: v2,
-                            uv: vec2(1., 1.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                        Vertex {
-                            position: v3,
-                            uv: vec2(0., 1.),
-                            color: mesh_color.into(),
-                            normal: normal,
-                        },
-                    ]);
+                        vertices.extend_from_slice(&[
+                            Vertex {
+                                position: v0,
+                                uv: vec2(1., 0.),
+                                color: mesh_color.into(),
+                                normal,
+                            },
+                            Vertex {
+                                position: v1,
+                                uv: vec2(0., 0.),
+                                color: mesh_color.into(),
+                                normal,
+                            },
+                            Vertex {
+                                position: v2,
+                                uv: vec2(1., 1.),
+                                color: mesh_color.into(),
+                                normal,
+                            },
+                            Vertex {
+                                position: v3,
+                                uv: vec2(0., 1.),
+                                color: mesh_color.into(),
+                                normal,
+                            },
+                        ]);
 
-                    indices.extend_from_slice(&[
-                        index_offset,
-                        index_offset + 1,
-                        index_offset + 2,
-                        index_offset + 1,
-                        index_offset + 3,
-                        index_offset + 2,
-                    ]);
+                        indices.extend_from_slice(&[
+                            index_offset,
+                            index_offset + 1,
+                            index_offset + 2,
+                            index_offset + 1,
+                            index_offset + 3,
+                            index_offset + 2,
+                        ]);
 
-                    index_offset += 4;
+                        index_offset += 4;
+                    }
+                }
+
+                if !vertices.is_empty() {
+                    meshes.push(Mesh {
+                        vertices,
+                        indices,
+                        texture: Some(brick_texture.clone()),
+                    });
                 }
             }
         }
-
-        let mesh = Mesh {
-            vertices,
-            indices,
-            texture: None, // Some(brick_texture)
-        };
 
         TerrainGrid {
             // x_count,
             // z_count,
             // grid,
-            meshes: vec![mesh],
+            meshes,
         }
     }
 

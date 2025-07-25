@@ -61,24 +61,29 @@ impl Player {
 
     pub fn move_player(self: &mut Self) {
         let player_front = Vec3::new(self.front.x, 0.0, self.front.z).normalize();
+        let move_speed = if is_key_down(KeyCode::LeftShift) {
+            MOVE_SPEED * 3.0
+        } else {
+            MOVE_SPEED
+        };
 
         if is_key_down(KeyCode::W) {
-            self.position += player_front * MOVE_SPEED;
+            self.position += player_front * move_speed;
         }
         if is_key_down(KeyCode::S) {
-            self.position -= player_front * MOVE_SPEED;
+            self.position -= player_front * move_speed;
         }
         if is_key_down(KeyCode::A) {
-            self.position -= self.right * MOVE_SPEED;
+            self.position -= self.right * move_speed;
         }
         if is_key_down(KeyCode::D) {
-            self.position += self.right * MOVE_SPEED;
+            self.position += self.right * move_speed;
         }
         if is_key_down(KeyCode::Space) {
-            self.position.y += MOVE_SPEED;
+            self.position.y += move_speed;
         }
         if is_key_down(KeyCode::LeftControl) {
-            self.position.y -= MOVE_SPEED;
+            self.position.y -= move_speed;
         }
     }
 }
