@@ -9,26 +9,26 @@ pub struct Terrain {
 
 impl Terrain {
     pub fn new(x_mesh_count: usize, z_mesh_count: usize, brick_texture: Texture2D) -> Self {
-        let x_vert_count = x_mesh_count + 1;
-        let z_vert_count = z_mesh_count + 1;
+        let x_verts = x_mesh_count + 1;
+        let z_verts = z_mesh_count + 1;
 
         let grid_scale: f32 = 1.0;
         let mut scale: f64 = 0.02 / grid_scale as f64;
         let mut height: f32 = 30.0 * grid_scale;
 
-        let mut grid: Vec<Vec3> = vec![Vec3::ZERO; x_vert_count * z_vert_count];
+        let mut grid: Vec<Vec3> = vec![Vec3::ZERO; x_verts * z_verts];
 
         let perlin = Perlin::new(1);
 
-        for z in 0..z_vert_count {
-            for x in 0..x_vert_count {
-                let x_test = x as f32 * grid_scale;
-                let z_test = z as f32 * grid_scale;
+        for z in 0..z_verts {
+            for x in 0..x_verts {
+                let x_pos = x as f32 * grid_scale;
+                let z_pos = z as f32 * grid_scale;
 
-                grid[z * x_vert_count + x].x = x_test as f32;
-                grid[z * x_vert_count + x].y +=
-                    perlin.get([x_test as f64 * scale, 0.0, z_test as f64 * scale]) as f32 * height;
-                grid[z * x_vert_count + x].z = z_test as f32;
+                grid[z * x_verts + x].x = x_pos as f32;
+                grid[z * x_verts + x].y +=
+                    perlin.get([x_pos as f64 * scale, 0.0, z_pos as f64 * scale]) as f32 * height;
+                grid[z * x_verts + x].z = z_pos as f32;
             }
         }
 
@@ -58,12 +58,12 @@ impl Terrain {
                     for x in 0..chunk_x_count {
                         let gx = cx + x;
                         let gz = cz + z;
-                        let i = gz * x_vert_count + gx;
+                        let i = gz * x_verts + gx;
 
                         let v0 = grid[i];
                         let v1 = grid[i + 1];
-                        let v2 = grid[i + x_vert_count];
-                        let v3 = grid[i + 1 + x_vert_count];
+                        let v2 = grid[i + x_verts];
+                        let v3 = grid[i + 1 + x_verts];
 
                         let normal3 = (v1 - v0).cross(v2 - v0).normalize();
                         let normal = vec4(normal3.x, -normal3.y, normal3.z, 0.0);
