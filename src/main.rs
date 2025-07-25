@@ -13,11 +13,8 @@ use terrain_grid::*;
 #[macroquad::main(conf)]
 async fn main() {
     set_default_filter_mode(FilterMode::Nearest);
+
     let brick_texture = load_texture("assets/rock_brick.png").await.unwrap();
-
-    let terrain_grid = TerrainGrid::new(500, 500, brick_texture);
-
-    let mut player = Player::new();
 
     let pipeline_params = PipelineParams {
         depth_write: true,
@@ -37,9 +34,11 @@ async fn main() {
     )
     .unwrap();
 
+    let terrain_grid = Terrain::new(1000, 1000, brick_texture);
+
+    let mut player = Player::new();
+
     let mut grabbed = false;
-    set_cursor_grab(grabbed);
-    show_mouse(!grabbed);
 
     loop {
         if is_key_pressed(KeyCode::Escape) {
@@ -59,9 +58,10 @@ async fn main() {
             }
         }
 
+        // MARK: Draw
         clear_background(BLACK);
 
-        // Going 3d!
+        // 3D world
         set_camera(&Camera3D {
             position: player.position,
             up: player.up,
@@ -74,14 +74,14 @@ async fn main() {
         terrain_grid.draw();
         gl_use_default_material();
 
-        // Back to screen space, render some text
+        // Back to screen space
         set_default_camera();
 
         draw_text(
             format!("fps = {}", get_fps()).as_str(),
-            10.0,
-            20.0,
-            32.0,
+            5.0,
+            15.0,
+            16.0,
             WHITE,
         );
 

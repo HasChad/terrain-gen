@@ -62,7 +62,7 @@ impl Player {
     pub fn move_player(self: &mut Self) {
         let player_front = Vec3::new(self.front.x, 0.0, self.front.z).normalize();
         let move_speed = if is_key_down(KeyCode::LeftShift) {
-            MOVE_SPEED * 3.0
+            MOVE_SPEED * 10.0
         } else {
             MOVE_SPEED
         };

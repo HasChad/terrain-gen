@@ -3,14 +3,11 @@ use noise::{NoiseFn, Perlin};
 
 const CHUNK_SIZE: usize = 28;
 
-pub struct TerrainGrid {
-    // pub x_count: usize,
-    // pub z_count: usize,
-    // pub grid: Vec<Vec3>,
+pub struct Terrain {
     pub meshes: Vec<Mesh>,
 }
 
-impl TerrainGrid {
+impl Terrain {
     pub fn new(x_mesh_count: usize, z_mesh_count: usize, brick_texture: Texture2D) -> Self {
         let x_vert_count = x_mesh_count + 1;
         let z_vert_count = z_mesh_count + 1;
@@ -121,12 +118,7 @@ impl TerrainGrid {
             }
         }
 
-        TerrainGrid {
-            // x_count,
-            // z_count,
-            // grid,
-            meshes,
-        }
+        Terrain { meshes }
     }
 
     pub fn draw(self: &Self) {
